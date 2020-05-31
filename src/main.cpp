@@ -6,6 +6,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <image_transport/image_transport.h>
 
+
 #include <Eigen/Dense>
 
 #include <cv_bridge/cv_bridge.h>
@@ -16,14 +17,15 @@
 
 #include <thread>
 #include <mutex>
+#include <condition_variable> // for cv.
+
+using namespace std;
 
 int main(int argc, char **argv) {
     std::cout << "hhi_gcs_node is running..." << std::endl;
     ros::init(argc, argv, "hhi_gcs_node");
     ros::NodeHandle nh("~");
-
-
-
+    
 
 
     while(ros::ok()){
