@@ -1,67 +1,75 @@
 #include <iostream>
-#include <termios.h> // UNIX LINUX.
 #include <ros/ros.h>
 
+#include "ground_control_system.h"
+
+// keyboard input tool
 #include "keyinput.h"
-
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/image_encodings.h>
-#include <image_transport/image_transport.h>
-
-// custom msgs
-// ref: https://steemit.com/kr-dev/@jacobyu/1303-ros-custom-message-generation
-#include "hhi_autoexcavator/hhi_msgs.h" // dedicated msgs for HHI project.
-
-#include <Eigen/Dense>
-
-#include <cv_bridge/cv_bridge.h>
-
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include <thread>
-#include <mutex>
-#include <condition_variable> // for cv.
 
 using namespace std;
 
 int main(int argc, char **argv) {
-    std::cout << "hhi_gcs is running..." << std::endl;
     ros::init(argc, argv, "hhi_gcs");
     ros::NodeHandle nh("~");
     
-    // publish message topic to control all module nodes.
-    ros::Publisher pub_hhi_msgs = 
-        nh.advertise<hhi_autoexcavator::hhi_msgs>("/hhi/msg",1);
-    
-    // 
-    string common_phrase =
-    "\n==================\n Press a key...\n   i: query one scene.\n   q: cease the program \n Select an input: \n";
-    cout << common_phrase;
+    // Ground control system class
+    int n_cams_cabin   = 2;
+    int n_cams_arm     = 0;
+    int n_lidars_cabin = 1;
+    int n_lidars_arm   = 0;
+    HHIGCS* gcs = new HHIGCS(nh, n_cams_cabin, n_cams_arm, n_lidars_cabin, n_lidars_arm);
+
+    // user input manual.
+    string user_manual = 
+    "\n==================================\n| Press a key...\n|    i: get data & start all algorithms\n|    s: query & save one scene.\n|    q: cease the program \n|  Select an input: \n";
+    cout << user_manual;
+
+    int cnt = 0;
     while(ros::ok())
     {
         int c = getch(); // call my own non-blocking input function
-        if(c == 'i'){
-            cout << "\n\n snapshot the current scene.\n";
-            // Do something here!
+        if(c == 's') {
+            cout << "\n\n[Operation]: snapshot & save the current scene.\n";
 
-            cout << common_phrase;
+            // send single query to all sensors.
+            gcs->sendSingleQueryToAllSensors();
+
+            // Wait for new snapshot data.
+            
+            // Save all data
+
+            cout << user_manual;
         }
-        else if(c == 'q'){
-            cout <<"\n\n quit program\n";
-            return -1;
+        else if(c == 'i') {
+            cout << "\n\n[Operation]: All algorithm.\n";
+            
+            // send single query to all sensors.
+            // gcs->sendSingleQueryToAllSensors();
+
+            // Wait for new snapshot data.
+
+            // TODO!
+
+            // Do something here! (3-D recon -> path planning)
+
+
+            cout << user_manual;
         }
-        else if((c != 0))
-        {
-            cout << ": unknown command...\n";
-            cout << common_phrase;
+        else if(c == 'q') {
+            cout <<"\n\n[Operation]: quit program\n\n";
+            break;
+        }
+        else if((c != 0)) {
+            cout << ": Un-identified command...\n";
+            cout << user_manual;
         }
 
         ros::spinOnce();
     }
 
-ROS_INFO_STREAM("GCS off\n");
+// delete allocation.
+delete gcs;
+
+ROS_INFO_STREAM("End of the program.\n");
 return -1;
 }
