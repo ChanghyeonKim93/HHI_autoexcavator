@@ -30,7 +30,6 @@ class HHIGCS{
 public:
     HHIGCS(ros::NodeHandle& nh, int n_cams, int n_lidars);
     ~HHIGCS();
-    
     bool sendSingleQueryToAllSensors();
     void saveAllData();
 

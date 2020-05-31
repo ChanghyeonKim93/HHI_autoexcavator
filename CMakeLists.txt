@@ -7,8 +7,7 @@ find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   cv_bridge
-
-
+  
   message_generation
   sensor_msgs
   std_msgs
@@ -28,17 +27,16 @@ generate_messages(
   std_msgs
 )
 
-
-
 catkin_package(
 	DEPENDS Eigen
   CATKIN_DEPENDS message_runtime
 )
 
-
-include_directories(include)
-include_directories( ${catkin_INCLUDE_DIRS} )
-include_directories( ${Eigen_INCLUDE_DIRS} )
+include_directories(
+  include 
+  ${catkin_INCLUDE_DIRS} 
+  ${Eigen_INCLUDE_DIRS}
+  )
 
 set(SRC ${SRC} src/main.cpp)
 
