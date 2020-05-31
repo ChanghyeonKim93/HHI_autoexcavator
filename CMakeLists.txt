@@ -7,13 +7,13 @@ find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   cv_bridge
-      
+
+
+  message_generation
   sensor_msgs
   std_msgs
   message_filters
   image_transport
-
-  message_generation
 )
 
 
@@ -46,6 +46,6 @@ set(DCMAKE_build_type release)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -O2 -m64 -Ofast -flto -msse3 -march=native -mfpmath=sse")
 
-add_executable (hhi_gcs_node ${SRC} )
-target_link_libraries (hhi_gcs_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${Eigen_LIBRARIES})
+add_executable (hhi_gcs ${SRC} )
+target_link_libraries (hhi_gcs ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${Eigen_LIBRARIES})
 

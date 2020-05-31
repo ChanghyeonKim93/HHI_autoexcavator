@@ -1,3 +1,3 @@
 string name
 int32 id
-bool flag_query
+int32 flag_query

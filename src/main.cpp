@@ -6,6 +6,8 @@
 #include <sensor_msgs/image_encodings.h>
 #include <image_transport/image_transport.h>
 
+// custom msgs
+#include "hhi_autoexcavator/hhi_msgs.h" // dedicated msgs for HHI project.
 
 #include <Eigen/Dense>
 
@@ -22,12 +24,13 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-    std::cout << "hhi_gcs_node is running..." << std::endl;
-    ros::init(argc, argv, "hhi_gcs_node");
+    std::cout << "hhi_gcs is running..." << std::endl;
+    ros::init(argc, argv, "hhi_gcs");
     ros::NodeHandle nh("~");
     
-
-
+    ros::Publisher pub_hhi_msgs = 
+        nh.advertise<hhi_autoexcavator::hhi_msgs>("/hhi/msg",1);
+    
     while(ros::ok()){
 
         ros::spinOnce();
