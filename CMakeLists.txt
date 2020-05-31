@@ -12,11 +12,29 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_filters
   image_transport
+
+  message_generation
 )
+
+
+## Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  hhi_msgs.msg
+)
+## Generate added messages and services with any dependencies listed here.
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+
 
 catkin_package(
 	DEPENDS Eigen
+  CATKIN_DEPENDS message_runtime
 )
+
 
 include_directories(include)
 include_directories( ${catkin_INCLUDE_DIRS} )
