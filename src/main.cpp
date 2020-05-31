@@ -13,11 +13,9 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh("~");
     
     // Ground control system class
-    int n_cams_cabin   = 2;
-    int n_cams_arm     = 0;
-    int n_lidars_cabin = 1;
-    int n_lidars_arm   = 0;
-    HHIGCS* gcs = new HHIGCS(nh, n_cams_cabin, n_cams_arm, n_lidars_cabin, n_lidars_arm);
+    int n_cams   = 2;
+    int n_lidars = 1;
+    HHIGCS* gcs = new HHIGCS(nh, n_cams, n_lidars);
 
     // user input manual.
     string user_manual = 
@@ -27,26 +25,27 @@ int main(int argc, char **argv) {
     int cnt = 0;
     while(ros::ok())
     {
+        // no need 'spinOnce()' for all loop!!
         int c = getch(); // call my own non-blocking input function
         if(c == 's') {
             cout << "\n\n[Operation]: snapshot & save the current scene.\n";
 
             // send single query to all sensors.
-            gcs->sendSingleQueryToAllSensors();
-
-            // Wait for new snapshot data.
+            bool is_query_ok = gcs->sendSingleQueryToAllSensors();
             
             // Save all data
-
+            if(is_query_ok){
+                // save and purge the current data!
+            }
+            else {
+                cout <<"   fail to save...\n";
+            }
             cout << user_manual;
         }
         else if(c == 'i') {
             cout << "\n\n[Operation]: All algorithm.\n";
             
             // send single query to all sensors.
-            // gcs->sendSingleQueryToAllSensors();
-
-            // Wait for new snapshot data.
 
             // TODO!
 
@@ -62,9 +61,7 @@ int main(int argc, char **argv) {
         else if((c != 0)) {
             cout << ": Un-identified command...\n";
             cout << user_manual;
-        }
-
-        ros::spinOnce();
+        }       
     }
 
 // delete allocation.
