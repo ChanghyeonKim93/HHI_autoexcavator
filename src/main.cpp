@@ -1,5 +1,7 @@
 #include <iostream>
 #include <ros/ros.h>
+#include <string>
+#include <sstream>
 
 #include "ground_control_system.h"
 
@@ -14,12 +16,23 @@ int main(int argc, char **argv) {
     
     // Ground control system class
     int n_cams   = 2;
-    int n_lidars = 1;
-    HHIGCS* gcs = new HHIGCS(nh, n_cams, n_lidars);
+    int n_lidars = 0;
+    string save_dir = "~/hhi_data/";
+    HHIGCS* gcs = new HHIGCS(nh, n_cams, n_lidars, save_dir);
+
+    cout << "GCS: waiting sensor nodes for 6 seconds...\n";
+    ros::Duration(6.0).sleep();
 
     // user input manual.
-    string user_manual = 
-    "\n==================================\n| Press a key...\n|    i: get data & start all algorithms\n|    s: query & save one scene.\n|    q: cease the program \n|  Select an input: \n";
+    string user_manual;
+    stringstream ss;
+    ss << "\n==============================================\n|" 
+    << "  Press a key..." 
+    << "\n|    i: get data & start all algorithms"
+    << "\n|    s: query & save one scene." 
+    << "\n|    q: cease the program" 
+    << "\n|  Select an input: \n";
+    user_manual = ss.str();
     cout << user_manual;
 
     int cnt = 0;
@@ -38,7 +51,7 @@ int main(int argc, char **argv) {
                 // save and purge the current data!
             }
             else {
-                cout <<"   fail to save...\n";
+                cout << "   fail to save...\n";
             }
             cout << user_manual;
         }
@@ -51,11 +64,11 @@ int main(int argc, char **argv) {
 
             // Do something here! (3-D recon -> path planning)
 
-
             cout << user_manual;
         }
         else if(c == 'q') {
-            cout <<"\n\n[Operation]: quit program\n\n";
+            gcs->sendQuitMsgToAllSensors();
+            cout << "\n\n[Operation]: quit program\n\n";
             break;
         }
         else if((c != 0)) {
