@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
             // Save all data
             if(is_query_ok){
                 // save and purge the current data!
+                gcs->saveAllData();
             }
             else {
                 cout << "   fail to save...\n";

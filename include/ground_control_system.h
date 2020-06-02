@@ -187,9 +187,9 @@ void HHIGCS::sendQuitMsgToAllSensors(){
 };
 
 void HHIGCS::callbackImage(const sensor_msgs::ImageConstPtr& msg, const int id){
-    cv_bridge::CvImagePtr cv_ptr;
-	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
-	*(buf_imgs_ + id) = cv_ptr->image;
+    // cv_bridge::CvImagePtr cv_ptr;
+	// cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
+	// *(buf_imgs_ + id) = cv_ptr->image;
     cout << "  GCS get! [" << id << "] image.\n";
     flag_imgs_[id] = true;
 };
@@ -206,6 +206,7 @@ void HHIGCS::saveAllData(){
     // initialize folder directory
     std::string folder_create_command;
     folder_create_command = "sudo rm -rf " + save_dir_;
+    cout << save_dir_<<endl;
 	system(folder_create_command.c_str());
     folder_create_command = "mkdir " + save_dir_;
 	system(folder_create_command.c_str());
