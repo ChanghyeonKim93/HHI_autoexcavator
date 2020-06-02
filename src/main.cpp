@@ -31,9 +31,9 @@ int main(int argc, char **argv) {
     // Ground control system class
     int n_cams   = 2;
     int n_lidars = 0;
-    stringstream ss;
-    ss << "~/hhi_data/" << currentDateTime() << "/";
-    string save_dir = ss.str();
+    stringstream ss1;
+    ss1 << "/home/icslkchnuc/hhi_data/" << currentDateTime() << "/";
+    string save_dir = ss1.str();
     cout << "save directory:[" << save_dir << "]\n";
 
     HHIGCS* gcs = new HHIGCS(nh, n_cams, n_lidars, save_dir);
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 
     // user input manual.
     string user_manual;
-    ss.clear();
+    stringstream ss;
     ss << "\n==============================================\n|" 
     << "  Press a key..." 
     << "\n|    i: get data & start all algorithms"
@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
 
     string cam_configure_manual;
     ss.clear();
+    ss.flush();
 
     ss << "\n |\n L\n";
 
@@ -88,8 +89,6 @@ int main(int argc, char **argv) {
             // TODO!
 
             // Do something here! (3-D recon -> path planning)
-            system("rosnode kill arduino_TCPIP");   
-
             cout << user_manual;
         }
         else if(c == 'q') {

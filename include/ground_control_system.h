@@ -98,6 +98,7 @@ private:
     void clearCmdMsg(){cmd_msg_.data = 0; };
 
     string save_dir_;
+    int current_seq_;
 };
 
 
@@ -144,6 +145,18 @@ HHIGCS::HHIGCS(ros::NodeHandle& nh,
 	system(folder_create_command.c_str());
     folder_create_command = "mkdir " + save_dir_;
 	system(folder_create_command.c_str());
+
+    // make image saving directories
+    for(int i = 0; i< n_cams_; i++){
+        folder_create_command = "mkdir " + save_dir_ + "cam" + itos(i) + "/";
+	    system(folder_create_command.c_str());
+    }
+
+    // make lidar data saving directories
+    for(int i = 0; i < n_lidars_; i++){
+        folder_create_command = "mkdir " + save_dir_ + "lidar" + itos(i) + "/";
+	    system(folder_create_command.c_str());
+    }
 };
 
 HHIGCS::~HHIGCS() {
@@ -199,18 +212,19 @@ void HHIGCS::sendQuitMsgToAllSensors(){
 };
 
 void HHIGCS::callbackImage(const sensor_msgs::ImageConstPtr& msg, const int id){
-    // cv_bridge::CvImagePtr cv_ptr;
-	// cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
-	// *(buf_imgs_ + id) = cv_ptr->image;
+    cv_bridge::CvImagePtr cv_ptr;
+	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
+	*(buf_imgs_ + id) = cv_ptr->image;
+
     cout << "  GCS get! [" << id << "] image.\n";
     flag_imgs_[id] = true;
 };
 
 void HHIGCS::callbackTime(const sensor_msgs::TimeReference::ConstPtr& t_ref){
     buf_time_ = (double)t_ref->header.stamp.sec + (double)t_ref->header.stamp.nsec/(double)1000000000.0;
-    int seq = t_ref->header.seq;
+    current_seq_ = t_ref->header.seq;
 
-    cout << "  GCS get! [" << buf_time_ <<"] time ref."<<" seg: " << seq << "\n";
+    cout << "  GCS get! [" << buf_time_ <<"] time ref."<<" seg: " << current_seq_ << "\n";
     flag_mcu_ = true;
 };
 
@@ -224,9 +238,10 @@ void HHIGCS::saveAllData(){
 		png_parameters.push_back(0);
 		png_param_on = true;
 	}
-	string file_name = save_dir_ + "a.png";
-	//cv::imwrite(file_name, img, png_parameters);
-	//this->file_single_image << curr_time << " " << curr_time << ".png" << "\n"; // association save
+    for(int id = 0; id < n_cams_; id++){
+        string file_name = save_dir_ + "/cam" + itos(id) + "/" + itos(current_seq_) + ".png";
+	    cv::imwrite(file_name, *(buf_imgs_ + id), png_parameters);
+    };
 };
 
 
