@@ -54,6 +54,11 @@ public:
     void sendQuitMsgToAllSensors();
     void saveAllData();
 
+    // related to camera settings.
+    void setExposureTime();
+    void setCameraGrayscaleGain();
+
+    
 private:
     // node handler
     ros::NodeHandle nh_;
@@ -132,6 +137,13 @@ HHIGCS::HHIGCS(ros::NodeHandle& nh,
     buf_time_ = -1.0;
     sub_timestamp_ = nh_.subscribe("/trigger_time", 1, &HHIGCS::callbackTime, this);
 
+
+    // generate save folder
+    std::string folder_create_command;
+    folder_create_command = "sudo rm -rf " + save_dir_;
+	system(folder_create_command.c_str());
+    folder_create_command = "mkdir " + save_dir_;
+	system(folder_create_command.c_str());
 };
 
 HHIGCS::~HHIGCS() {
@@ -204,13 +216,6 @@ void HHIGCS::callbackTime(const sensor_msgs::TimeReference::ConstPtr& t_ref){
 
 void HHIGCS::saveAllData(){
     // initialize folder directory
-    std::string folder_create_command;
-    folder_create_command = "sudo rm -rf " + save_dir_;
-    cout << save_dir_<<endl;
-	system(folder_create_command.c_str());
-    folder_create_command = "mkdir " + save_dir_;
-	system(folder_create_command.c_str());
-
     bool static png_param_on = false;
 	vector<int> static png_parameters;
 	if (png_param_on == false)
