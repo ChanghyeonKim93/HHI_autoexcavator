@@ -7,12 +7,18 @@ find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   cv_bridge
+
+  dynamic_reconfigure
   
   message_generation
   sensor_msgs
   std_msgs
   message_filters
   image_transport
+)
+
+generate_dynamic_reconfigure_options(
+  cfg/param_reconfigure.cfg
 )
 
 
@@ -29,7 +35,7 @@ generate_messages(
 
 catkin_package(
 	DEPENDS Eigen
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS message_runtime roscpp dynamic_reconfigure
 )
 
 include_directories(
@@ -47,3 +53,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -O2 -m64 -Ofast -flto -msse3 -march=
 add_executable (hhi_gcs ${SRC} )
 target_link_libraries (hhi_gcs ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${Eigen_LIBRARIES})
 
+add_dependencies(hhi_gcs ${PROJECT_NAME}_gencfg)

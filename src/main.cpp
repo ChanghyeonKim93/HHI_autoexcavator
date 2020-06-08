@@ -9,6 +9,14 @@
 // keyboard input tool
 #include "keyinput.h"
 
+#include <dynamic_reconfigure/server.h>
+#include <hhi_autoexcavator/paramReconfigDynConfig.h>
+
+
+void callback(hhi_autoexcavator::paramReconfigDynConfig &config, uint32_t level) {
+      ROS_INFO("Dynamic parameter: %d", config.test_param);
+}
+
 // Get current data/time, format is yyyy-mm-dd.hh:mm:ss
 const std::string currentDateTime(){
     time_t now = time(0);
@@ -38,6 +46,12 @@ int main(int argc, char **argv) {
 
     HHIGCS* gcs = new HHIGCS(nh, n_cams, n_lidars, save_dir);
 
+
+    dynamic_reconfigure::Server<hhi_autoexcavator::paramReconfigDynConfig> server;
+    dynamic_reconfigure::Server<hhi_autoexcavator::paramReconfigDynConfig>::CallbackType f;
+    f = boost::bind(&callback, _1, _2);
+    server.setCallback(f);
+
     cout << "GCS: waiting sensor nodes for 6 seconds...\n";
     ros::Duration(6.0).sleep();
 
@@ -47,9 +61,10 @@ int main(int argc, char **argv) {
     ss << "\n==============================================\n|" 
     << "  Press a key..." 
     << "\n|    i: get data & start all algorithms"
-    << "\n|    s: query & save one scene." 
+    << "\n|    c: continuous shot mode"
+    << "\n|    s: query & save one scene" 
     << "\n|    q: cease the program"
-    << "\n|    c: camera parameter configuration mode"
+    << "\n|    m: camera parameter configuration mode"
     << "\n|  Select an input: \n";
     user_manual = ss.str();
     cout << user_manual;
