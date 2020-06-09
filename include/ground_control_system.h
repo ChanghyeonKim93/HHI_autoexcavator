@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <fstream> // for lidar pcd files
 
 #include <ros/ros.h>
 #include <Eigen/Dense>
@@ -56,6 +57,7 @@ public:
     ~HHIGCS();
     bool sendSingleQueryToAllSensors();
     void sendQuitMsgToAllSensors();
+    void saveLidarData(const std::string& file_name, const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_lidar);
     void saveAllData();
 
     // related to camera settings.
@@ -259,7 +261,7 @@ void HHIGCS::callbackLidar(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, co
 
     int n_pts = temp->points.size();
     cout <<"n_pts lidar: " <<n_pts<<endl;
-    cout << "xyzi: "<<temp->points[1].x <<"," << temp->points[1].y << "," <<temp->points[1].z << "," << temp->points[1].intensity << endl;
+    flag_lidars_[id] = true;
 };
 
 void HHIGCS::callbackTime(const sensor_msgs::TimeReference::ConstPtr& t_ref){
@@ -268,6 +270,35 @@ void HHIGCS::callbackTime(const sensor_msgs::TimeReference::ConstPtr& t_ref){
 
     cout << "  GCS get! [" << buf_time_ <<"] time ref."<<" seg: " << current_seq_ << "\n";
     flag_mcu_ = true;
+};
+
+void HHIGCS::saveLidarData(const std::string& file_name, const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_lidar){
+    int n_pts = pc_lidar->points.size();
+
+    std::ofstream output_file(file_name, std::ios::trunc);
+    output_file.precision(6);
+    output_file.setf(std::ios_base::fixed, std::ios_base::floatfield);
+
+    if(output_file.is_open()){
+        output_file << "# test saving!\n";
+        output_file << "# .PCD v.7 - Point Cloud Data file format\n";
+        output_file << "VERSION .7\n";
+        output_file << "FIELDS x y z i\n";
+        output_file << "SIZE 8 8 8 8\n";
+        output_file << "TYPE F F F F\n";
+        output_file << "COUNT 1 1 1 1\n";
+        output_file << "WIDTH " << n_pts << "\n";
+        output_file << "VIEWPOINT 0 0 0 1 0 0\n";
+        output_file << "POINTS " << n_pts<< "\n";
+        output_file << "DATA ascii\n";
+        for(int i = 0; i < n_pts; i++){
+            output_file << pc_lidar->points[i].x<<" ";
+            output_file << pc_lidar->points[i].y<<" ";
+            output_file << pc_lidar->points[i].z<<" ";
+            output_file << pc_lidar->points[i].intensity<<"\n";
+        }
+    }
+    
 };
 
 void HHIGCS::saveAllData(){
@@ -286,7 +317,8 @@ void HHIGCS::saveAllData(){
     };
 
     for(int id = 0; id <n_lidars_; id++){
-        
+        string file_name = save_dir_ + "/lidar" + itos(id) + "/" + itos(current_seq_) + ".pcd";
+        saveLidarData(file_name, *(buf_lidars_ + id));
     }
 };
 
