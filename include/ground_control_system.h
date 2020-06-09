@@ -283,11 +283,12 @@ void HHIGCS::saveLidarData(const std::string& file_name, const pcl::PointCloud<p
         output_file << "# test saving!\n";
         output_file << "# .PCD v.7 - Point Cloud Data file format\n";
         output_file << "VERSION .7\n";
-        output_file << "FIELDS x y z i\n";
+        output_file << "FIELDS x y z Intensity\n";
         output_file << "SIZE 8 8 8 8\n";
         output_file << "TYPE F F F F\n";
         output_file << "COUNT 1 1 1 1\n";
         output_file << "WIDTH " << n_pts << "\n";
+        output_file << "HEIGHT 1\n";
         output_file << "VIEWPOINT 0 0 0 1 0 0\n";
         output_file << "POINTS " << n_pts<< "\n";
         output_file << "DATA ascii\n";
