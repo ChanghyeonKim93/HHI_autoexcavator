@@ -11,8 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   
   message_generation
+  
   sensor_msgs
   std_msgs
+  pcl_conversions
+  pcl_ros
   message_filters
   image_transport
 )
@@ -25,8 +28,9 @@ generate_dynamic_reconfigure_options(
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  hhi_msgs.msg
+  hhi_command.msg
 )
+
 ## Generate added messages and services with any dependencies listed here.
 generate_messages(
   DEPENDENCIES

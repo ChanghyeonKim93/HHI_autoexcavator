@@ -24,11 +24,15 @@
 
 #include <std_msgs/Int32.h> // command msg
 #include <sensor_msgs/TimeReference.h> // arduino time
+#include <sensor_msgs/PointCloud2.h>
+
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 // custom msgs
 // ref: https://steemit.com/kr-dev/@jacobyu/1303-ros-custom-message-generation
-#include "std_msgs/Int32.h"
-#include "hhi_autoexcavator/hhi_msgs.h" // dedicated msgs for HHI project.
+#include "hhi_autoexcavator/hhi_command.h" // dedicated msgs for HHI project.
 
 using namespace std;
 
@@ -69,8 +73,9 @@ private:
     
     // subscribers
     image_transport::ImageTransport it_;
-    vector<image_transport::Subscriber> subs_imgs_;
+    vector<image_transport::Subscriber> subs_imgs_; // from mvBlueCOUGAR-X cameras
     ros::Subscriber sub_timestamp_; // from arduino.
+    vector<ros::Subscriber> subs_lidars_; // from Velodyne lidars
 
     // topic names
     vector<string> topicnames_imgs_;
@@ -89,11 +94,13 @@ private:
     // data container (buffer)
     cv::Mat* buf_imgs_; // Images from mvBlueCOUGAR-X cameras.
     double buf_time_; // triggered time stamp from Arduino. (second)
-    
+    pcl::PointCloud<pcl::PointXYZI>::Ptr* buf_lidars_; // point clouds (w/ intensity) from Velodyne VLP16 
+
 
     // private methods
     void initializeAllFlags();
-    void callbackImage(const sensor_msgs::ImageConstPtr& msg, const int id);
+    void callbackImage(const sensor_msgs::ImageConstPtr& msg, const int& id);
+    void callbackLidar(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id);
     void callbackTime(const sensor_msgs::TimeReference::ConstPtr& t_ref);
     void clearCmdMsg(){cmd_msg_.data = 0; };
 
@@ -131,7 +138,21 @@ HHIGCS::HHIGCS(ros::NodeHandle& nh,
     }
 
     // initialize lidar container & subscribers.
-    flag_lidars_ = nullptr;
+    if(n_lidars_ > 0){
+        buf_lidars_ = new pcl::PointCloud<pcl::PointXYZI>::Ptr[n_lidars_];
+        flag_lidars_ = new bool[n_lidars_];
+        for(int i = 0; i < n_lidars_; i++){
+            flag_lidars_[i] = false;
+            *(buf_lidars_ + i) = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+            string name_temp = "/velodyne_points";
+            topicnames_lidars_.push_back(name_temp);
+            subs_lidars_.push_back(nh_.subscribe<sensor_msgs::PointCloud2>(topicnames_lidars_[i], 1, boost::bind(&HHIGCS::callbackLidar, this, _1, i)));
+        }
+    }
+    else{
+        buf_lidars_  = nullptr;
+        flag_lidars_ = nullptr;
+    }
     
     // initialize arduino container & subscriber.
     flag_mcu_ = false;
@@ -163,6 +184,9 @@ HHIGCS::~HHIGCS() {
     // ! all allocation needs to be freed.
     if( buf_imgs_ != nullptr ) delete[] buf_imgs_;
     if( flag_imgs_ != nullptr ) delete[] flag_imgs_;
+
+    if( buf_lidars_ != nullptr) delete[] buf_lidars_;
+    if( flag_lidars_ != nullptr) delete[] flag_lidars_;
 };
 
 bool HHIGCS::sendSingleQueryToAllSensors()
@@ -211,13 +235,31 @@ void HHIGCS::sendQuitMsgToAllSensors(){
     clearCmdMsg();
 };
 
-void HHIGCS::callbackImage(const sensor_msgs::ImageConstPtr& msg, const int id){
+void HHIGCS::callbackImage(const sensor_msgs::ImageConstPtr& msg, const int& id){
     cv_bridge::CvImagePtr cv_ptr;
 	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
 	*(buf_imgs_ + id) = cv_ptr->image;
 
     cout << "  GCS get! [" << id << "] image.\n";
     flag_imgs_[id] = true;
+};
+
+void HHIGCS::callbackLidar(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
+    msg_lidar->header.stamp; // timestamp
+
+    // Create a container for the data.
+    sensor_msgs::PointCloud2 output;
+
+    // Do data processing here...
+    output = *msg_lidar;
+
+    pcl::PointCloud<pcl::PointXYZI>::Ptr temp = *(buf_lidars_ + id);
+    temp->clear();
+    pcl::fromROSMsg(output, *temp);
+
+    int n_pts = temp->points.size();
+    cout <<"n_pts lidar: " <<n_pts<<endl;
+    cout << "xyzi: "<<temp->points[1].x <<"," << temp->points[1].y << "," <<temp->points[1].z << "," << temp->points[1].intensity << endl;
 };
 
 void HHIGCS::callbackTime(const sensor_msgs::TimeReference::ConstPtr& t_ref){
@@ -242,6 +284,10 @@ void HHIGCS::saveAllData(){
         string file_name = save_dir_ + "/cam" + itos(id) + "/" + itos(current_seq_) + ".png";
 	    cv::imwrite(file_name, *(buf_imgs_ + id), png_parameters);
     };
+
+    for(int id = 0; id <n_lidars_; id++){
+        
+    }
 };
 
 

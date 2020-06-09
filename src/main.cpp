@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     
     // Ground control system class
     int n_cams   = 2;
-    int n_lidars = 0;
+    int n_lidars = 1;
     stringstream ss1;
     ss1 << "/home/icslkchnuc/hhi_data/" << currentDateTime() << "/";
     string save_dir = ss1.str();
