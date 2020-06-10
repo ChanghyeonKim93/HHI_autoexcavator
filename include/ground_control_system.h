@@ -55,6 +55,7 @@ class HHIGCS{
 public:
     HHIGCS(ros::NodeHandle& nh, int n_cams, int n_lidars, const string& save_dir);
     ~HHIGCS();
+    void streamingMode();
     bool sendSingleQueryToAllSensors();
     void sendQuitMsgToAllSensors();
     void saveLidarData(const std::string& file_name, const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_lidar);
@@ -64,7 +65,12 @@ public:
     void setExposureTime();
     void setCameraGrayscaleGain();
 
-    
+    // pointer to data
+    cv::Mat& getBufImage(const int& id){ return *(buf_imgs_+id);};
+    pcl::PointCloud<pcl::PointXYZI>::Ptr& getBufLidar(const int& id){return *(buf_lidars_+id);};
+
+    inline int getNumCams(){return n_cams_;};
+    inline int getNumLidars(){return n_lidars_;};
 private:
     // node handler
     ros::NodeHandle nh_;
@@ -180,6 +186,20 @@ HHIGCS::HHIGCS(ros::NodeHandle& nh,
         folder_create_command = "mkdir " + save_dir_ + "lidar" + itos(i) + "/";
 	    system(folder_create_command.c_str());
     }
+
+    // save association
+    string file_name = save_dir_ + "/association.txt";
+    std::ofstream output_file(file_name, std::ios::trunc);
+    output_file.precision(6);
+    output_file.setf(std::ios_base::fixed, std::ios_base::floatfield);
+    if(output_file.is_open()){
+        output_file << "time_us ";
+        for(int i = 0; i < n_cams_; i++) output_file << "cam" << i << " ";
+        output_file << "exposure_us gain_dB ";
+        for(int i = 0; i < n_lidars_; i++) output_file << "lidar" << i <<" ";
+        output_file << "\n";
+    }
+
 };
 
 HHIGCS::~HHIGCS() {
@@ -189,6 +209,24 @@ HHIGCS::~HHIGCS() {
 
     if( buf_lidars_ != nullptr) delete[] buf_lidars_;
     if( flag_lidars_ != nullptr) delete[] flag_lidars_;
+};
+
+void HHIGCS::streamingMode(){
+    cout << "10 Hz (forced) streaming mode\n";
+    // initialize all flags
+    initializeAllFlags();
+
+    // fill out control msg
+    cmd_msg_.data = 1;
+    
+    // query sensor data for all sensors
+    pub_cmd_msg_.publish(cmd_msg_);
+    clearCmdMsg();
+    
+    // (timeout) Wait for obtaining and transmitting all sensor data. 
+    // Considering exposure time and lidar gathering time, set 50 ms
+    ros::spinOnce();
+    ros::Duration(0.10).sleep();
 };
 
 bool HHIGCS::sendSingleQueryToAllSensors()
@@ -265,9 +303,8 @@ void HHIGCS::callbackLidar(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, co
 };
 
 void HHIGCS::callbackTime(const sensor_msgs::TimeReference::ConstPtr& t_ref){
-    buf_time_ = (double)t_ref->header.stamp.sec + (double)t_ref->header.stamp.nsec/(double)1000000000.0;
+    buf_time_ = (double)t_ref->header.stamp.sec + (double)t_ref->header.stamp.nsec/(double)1000000.0;
     current_seq_ = t_ref->header.seq;
-
     cout << "  GCS get! [" << buf_time_ <<"] time ref."<<" seg: " << current_seq_ << "\n";
     flag_mcu_ = true;
 };
@@ -303,7 +340,7 @@ void HHIGCS::saveLidarData(const std::string& file_name, const pcl::PointCloud<p
 };
 
 void HHIGCS::saveAllData(){
-    // initialize folder directory
+    // save images
     bool static png_param_on = false;
 	vector<int> static png_parameters;
 	if (png_param_on == false)
@@ -315,11 +352,24 @@ void HHIGCS::saveAllData(){
     for(int id = 0; id < n_cams_; id++){
         string file_name = save_dir_ + "/cam" + itos(id) + "/" + itos(current_seq_) + ".png";
 	    cv::imwrite(file_name, *(buf_imgs_ + id), png_parameters);
-    };
+    }
 
+    // save lidars
     for(int id = 0; id <n_lidars_; id++){
         string file_name = save_dir_ + "/lidar" + itos(id) + "/" + itos(current_seq_) + ".pcd";
         saveLidarData(file_name, *(buf_lidars_ + id));
+    }
+
+    // save association
+    string file_name = save_dir_ + "/association.txt";
+    std::ofstream output_file(file_name, std::ios::app);
+    output_file.precision(6);
+    output_file.setf(std::ios_base::fixed, std::ios_base::floatfield);
+    if(output_file.is_open()){
+        output_file << buf_time_ << " ";
+        for(int i = 0; i < n_cams_; i++) output_file << "/cam" << i << "/" << current_seq_ << ".png ";
+        for(int i = 0; i < n_lidars_; i++) output_file << "/lidar" << i << "/" << current_seq_ << ".pcd ";
+        output_file << "\n";
     }
 };
 

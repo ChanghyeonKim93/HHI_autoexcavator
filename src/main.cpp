@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     ss << "\n==============================================\n|" 
     << "  Press a key..." 
     << "\n|    i: get data & start all algorithms"
-    << "\n|    c: continuous shot mode"
+    << "\n|    f: continuous shot mode"
     << "\n|    s: query & save one scene" 
     << "\n|    q: cease the program"
     << "\n|    m: camera parameter configuration mode"
@@ -110,6 +110,34 @@ int main(int argc, char **argv) {
             gcs->sendQuitMsgToAllSensors();
             cout << "\n\n[Operation]: quit program\n\n";
             break;
+        }
+        else if(c == 'f'){
+            cout << "\n\n[Operation]: free running... press 'f' to stop streaming.\n\n";
+            cv::namedWindow("control", CV_WINDOW_NORMAL);
+            for(int i = 0; i < gcs->getNumCams(); i++){
+                string win_name = "img" + itos(i);
+                cv::namedWindow(win_name,CV_WINDOW_NORMAL);
+            }
+
+            int expose_us = 0;
+            cv::createTrackbar("exposure_us", "control", &expose_us, 5000000);
+
+            int cc = 0;
+            while(1){
+                gcs->streamingMode();
+                for(int i = 0; i < gcs->getNumCams(); i++){
+                    string win_name = "img" + itos(i);
+                    cv::Mat a =gcs->getBufImage(i);
+                    cv::imshow(win_name, a);
+                }
+
+                if(cv::waitKey(1) == 'f'){
+                    cv::destroyAllWindows();
+                    break;
+                }
+            }
+            cout << " streaming stops.\n";
+            cout << user_manual;
         }
         else if((c != 0)) {
             cout << ": Un-identified command...\n";
