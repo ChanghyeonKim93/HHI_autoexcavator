@@ -35,12 +35,17 @@ using namespace std;
 int main(int argc, char **argv) {
     ros::init(argc, argv, "hhi_gcs");
     ros::NodeHandle nh("~");
+
+    int n_cams   = -1;
+    int n_lidars = -1;
+    ros::param::get("~n_cameras", n_cams);
+    ros::param::get("~n_lidars", n_lidars);
+
     
     // Ground control system class
-    int n_cams   = 2;
-    int n_lidars = 1;
+    
     stringstream ss1;
-    ss1 << "/home/icslkchnuc/hhi_data/" << currentDateTime() << "/";
+    ss1 << "/home/larrkchlaptop/hhi_data/" << currentDateTime() << "/";
     string save_dir = ss1.str();
     cout << "save directory:[" << save_dir << "]\n";
 

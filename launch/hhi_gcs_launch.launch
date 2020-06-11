@@ -1,12 +1,18 @@
 <launch>
-    <arg name="binning_on" default="true"/>
+    <arg name="binning_on" default="false"/>
     <arg name="triggered_on" default="true"/>
     <arg name="auto_exposure_control" default="false"/>
     <arg name="auto_gain_control" default="false"/>
     <arg name="expose_us" default="20000"/>
     <arg name="frame_rate" default="20.0"/>
+
+    <arg name="n_cameras" default="1"/>
+    <arg name="n_lidars" default="1"/>
    
-    <node pkg="hhi_autoexcavator" name="hhi_gcs" type="hhi_gcs" output="screen"></node>
+    <node pkg="hhi_autoexcavator" name="hhi_gcs" type="hhi_gcs" output="screen">
+        <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
+        <param name="n_lidars" type="int" value="$(arg n_cameras)"/>
+    </node>
     <node pkg="bluecougar" name="bluecougar_multiple_node" type="bluecougar_multiple_node" output="screen">
         <param name="binning_on" type="bool" value="$(arg binning_on)"/>
         <param name="triggered_on" type="bool" value="$(arg triggered_on)"/>
@@ -17,4 +23,5 @@
     </node>
     <node pkg="rosserial_python" type="serial_node.py" name="arduino_TCPIP" args=" tcp" output="screen">
     </node>
+	   
 </launch>

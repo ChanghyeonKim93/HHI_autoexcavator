@@ -212,7 +212,7 @@ HHIGCS::~HHIGCS() {
 };
 
 void HHIGCS::streamingMode(){
-    cout << "10 Hz (forced) streaming mode\n";
+    cout << "20 Hz (forced) streaming mode\n";
     // initialize all flags
     initializeAllFlags();
 
@@ -226,7 +226,7 @@ void HHIGCS::streamingMode(){
     // (timeout) Wait for obtaining and transmitting all sensor data. 
     // Considering exposure time and lidar gathering time, set 50 ms
     ros::spinOnce();
-    ros::Duration(0.10).sleep();
+    ros::Duration(0.05).sleep();
 };
 
 bool HHIGCS::sendSingleQueryToAllSensors()
@@ -234,7 +234,7 @@ bool HHIGCS::sendSingleQueryToAllSensors()
     // initialize all flags
     initializeAllFlags();
 
-    // fill out control msg
+    // fill out control msgc
     cmd_msg_.data = 1;
 
     // query sensor data for all sensors
