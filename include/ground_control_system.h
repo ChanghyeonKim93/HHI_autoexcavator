@@ -58,7 +58,9 @@ public:
     void streamingMode();
     bool sendSingleQueryToAllSensors();
     void sendQuitMsgToAllSensors();
+    void pointcloud2tobuffers(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id);
     void saveLidarData(const std::string& file_name, const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_lidar);
+    void saveLidarDataRingTime(const std::string& file_name, const int& id);
     void saveAllData();
 
     // related to camera settings.
@@ -103,7 +105,14 @@ private:
     cv::Mat* buf_imgs_; // Images from mvBlueCOUGAR-X cameras.
     double buf_time_; // triggered time stamp from Arduino. (second)
     pcl::PointCloud<pcl::PointXYZI>::Ptr* buf_lidars_; // point clouds (w/ intensity) from Velodyne VLP16 
-
+    
+    vector<float*> buf_lidars_x;
+    vector<float*> buf_lidars_y;
+    vector<float*> buf_lidars_z;
+    vector<float*> buf_lidars_intensity;
+    vector<unsigned short*> buf_lidars_ring;
+    vector<float*> buf_lidars_time;
+    vector<int> buf_lidars_npoints;
 
     // private methods
     void initializeAllFlags();
@@ -152,7 +161,15 @@ HHIGCS::HHIGCS(ros::NodeHandle& nh,
         for(int i = 0; i < n_lidars_; i++){
             flag_lidars_[i] = false;
             *(buf_lidars_ + i) = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-            string name_temp = "/velodyne_points";
+	    buf_lidars_x.push_back(new float[100000]);
+	    buf_lidars_y.push_back(new float[100000]);
+	    buf_lidars_z.push_back(new float[100000]);
+	    buf_lidars_intensity.push_back(new float[100000]);
+	    buf_lidars_ring.push_back(new unsigned short[100000]);
+	    buf_lidars_time.push_back(new float[100000]);
+	    buf_lidars_npoints.push_back(0);
+
+            string name_temp = "/lidar" + itos(i) + "/velodyne_points";
             topicnames_lidars_.push_back(name_temp);
             subs_lidars_.push_back(nh_.subscribe<sensor_msgs::PointCloud2>(topicnames_lidars_[i], 1, boost::bind(&HHIGCS::callbackLidar, this, _1, i)));
         }
@@ -209,6 +226,14 @@ HHIGCS::~HHIGCS() {
 
     if( buf_lidars_ != nullptr) delete[] buf_lidars_;
     if( flag_lidars_ != nullptr) delete[] flag_lidars_;
+    for(int i = 0; i < n_lidars_; i++){
+	delete[] buf_lidars_x[i];
+	delete[] buf_lidars_y[i];
+	delete[] buf_lidars_z[i];
+	delete[] buf_lidars_intensity[i];
+	delete[] buf_lidars_ring[i];
+	delete[] buf_lidars_time[i];
+    }
 };
 
 void HHIGCS::streamingMode(){
@@ -265,7 +290,10 @@ bool HHIGCS::sendSingleQueryToAllSensors()
 
 void HHIGCS::initializeAllFlags(){
     for(int i = 0; i < n_cams_; i++) flag_imgs_[i] = false;
-    for(int i = 0; i < n_lidars_; i++) flag_lidars_[i] = false;
+    for(int i = 0; i < n_lidars_; i++){
+	flag_lidars_[i] = false;
+	buf_lidars_npoints[i] = 0;
+    }
     flag_mcu_ = false;
 };
 
@@ -284,7 +312,40 @@ void HHIGCS::callbackImage(const sensor_msgs::ImageConstPtr& msg, const int& id)
     flag_imgs_[id] = true;
 };
 
+void HHIGCS::pointcloud2tobuffers(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
+    // get width and height of 2D point cloud data
+    buf_lidars_npoints[id] = msg_lidar->width;
+    for(int i = 0; i < msg_lidar->width; i++)
+    {
+
+       int arrayPosX = i*msg_lidar->point_step + msg_lidar->fields[0].offset; // X has an offset of 0
+    int arrayPosY = i*msg_lidar->point_step + msg_lidar->fields[1].offset; // Y has an offset of 4
+    int arrayPosZ = i*msg_lidar->point_step + msg_lidar->fields[2].offset; // Z has an offset of 8
+
+    int ind_intensity = i*msg_lidar->point_step + msg_lidar->fields[3].offset; // 12
+    int ind_ring = i*msg_lidar->point_step + msg_lidar->fields[4].offset; // 16
+    int ind_time = i*msg_lidar->point_step + msg_lidar->fields[5].offset; // 18
+
+    float X = 0.0;
+    float Y = 0.0;
+    float Z = 0.0;
+    float intensity = 0.0;
+    unsigned short ring = 0.0;
+    float time = 0.0;
+
+    memcpy(buf_lidars_x[id]+i, &msg_lidar->data[arrayPosX], sizeof(float));
+    memcpy(buf_lidars_y[id]+i, &msg_lidar->data[arrayPosY], sizeof(float));
+    memcpy(buf_lidars_z[id]+i, &msg_lidar->data[arrayPosZ], sizeof(float));
+    memcpy(buf_lidars_intensity[id]+i, &msg_lidar->data[ind_intensity], sizeof(float));
+    memcpy(buf_lidars_ring[id]+i, &msg_lidar->data[ind_ring], sizeof(unsigned short));
+    memcpy(buf_lidars_time[id]+i, &msg_lidar->data[ind_time], sizeof(float));
+    //cout << "xyz intensity ring time: "<<*(buf_lidars_x[id]+i)<<","<<*(buf_lidars_y[id]+i)<<","<<*(buf_lidars_z[id]+i)
+    //<<","<<*(buf_lidars_intensity[id]+i)<<","<<*(buf_lidars_ring[id]+i)<<","<<*(buf_lidars_time[id]+i)<<endl;
+}
+}
+
 void HHIGCS::callbackLidar(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
+	pointcloud2tobuffers(msg_lidar,  id);
     msg_lidar->header.stamp; // timestamp
 
     // Create a container for the data.
@@ -320,13 +381,13 @@ void HHIGCS::saveLidarData(const std::string& file_name, const pcl::PointCloud<p
         output_file << "# test saving!\n";
         output_file << "# .PCD v.7 - Point Cloud Data file format\n";
         output_file << "VERSION .7\n";
-        output_file << "FIELDS x y z Intensity\n";
-        output_file << "SIZE 8 8 8 8\n";
+        output_file << "FIELDS x y z intensity\n";
+        output_file << "SIZE 4 4 4 4\n";
         output_file << "TYPE F F F F\n";
         output_file << "COUNT 1 1 1 1\n";
         output_file << "WIDTH " << n_pts << "\n";
         output_file << "HEIGHT 1\n";
-        output_file << "VIEWPOINT 0 0 0 1 0 0\n";
+        output_file << "VIEWPOINT 0 0 0 1 0 0 0\n";
         output_file << "POINTS " << n_pts<< "\n";
         output_file << "DATA ascii\n";
         for(int i = 0; i < n_pts; i++){
@@ -336,7 +397,36 @@ void HHIGCS::saveLidarData(const std::string& file_name, const pcl::PointCloud<p
             output_file << pc_lidar->points[i].intensity<<"\n";
         }
     }
-    
+};
+
+void HHIGCS::saveLidarDataRingTime(const std::string& file_name, const int& id){
+    int n_pts = buf_lidars_npoints[id];
+
+    std::ofstream output_file(file_name, std::ios::trunc);
+    output_file.precision(6);
+    output_file.setf(std::ios_base::fixed, std::ios_base::floatfield);
+
+    if(output_file.is_open()){
+        output_file << "# .PCD v.7 - Point Cloud Data file format\n";
+        output_file << "VERSION .7\n";
+        output_file << "FIELDS x y z intensity ring time\n";
+        output_file << "SIZE 4 4 4 4 2 4\n";
+        output_file << "TYPE F F F F U F\n";
+        output_file << "COUNT 1 1 1 1 1 1\n";
+        output_file << "WIDTH " << n_pts << "\n";
+        output_file << "HEIGHT 1\n";
+        output_file << "VIEWPOINT 0 0 0 1 0 0 0\n";
+        output_file << "POINTS " << n_pts<< "\n";
+        output_file << "DATA ascii\n";
+        for(int i = 0; i < n_pts; i++){
+            output_file << *(buf_lidars_x[id] + i)<<" ";
+            output_file << *(buf_lidars_y[id] + i)<<" ";
+            output_file << *(buf_lidars_z[id] + i)<<" ";
+            output_file << *(buf_lidars_intensity[id] + i)<<" ";
+            output_file << *(buf_lidars_ring[id] + i)<<" ";
+            output_file << *(buf_lidars_time[id] + i)<<"\n";
+        }
+    }  
 };
 
 void HHIGCS::saveAllData(){
@@ -357,7 +447,8 @@ void HHIGCS::saveAllData(){
     // save lidars
     for(int id = 0; id <n_lidars_; id++){
         string file_name = save_dir_ + "/lidar" + itos(id) + "/" + itos(current_seq_) + ".pcd";
-        saveLidarData(file_name, *(buf_lidars_ + id));
+        //saveLidarData(file_name, *(buf_lidars_ + id));
+        saveLidarDataRingTime(file_name, id);
     }
 
     // save association
