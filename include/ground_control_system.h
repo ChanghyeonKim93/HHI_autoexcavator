@@ -73,6 +73,7 @@ public:
 
     inline int getNumCams(){return n_cams_;};
     inline int getNumLidars(){return n_lidars_;};
+
 private:
     // node handler
     ros::NodeHandle nh_;
@@ -132,8 +133,8 @@ HHIGCS::HHIGCS(ros::NodeHandle& nh,
 {
     // default.
     flag_lidars_ = nullptr;
-    flag_imgs_ = nullptr;
-    buf_imgs_ = nullptr;
+    flag_imgs_   = nullptr;
+    buf_imgs_    = nullptr;
 
     // command message publisher.
     pub_cmd_msg_ = nh_.advertise<std_msgs::Int32>("/hhi/msg",1);
@@ -282,7 +283,7 @@ bool HHIGCS::sendSingleQueryToAllSensors()
             transmit_success = transmit_success & flag_lidars_[i];
     transmit_success = transmit_success & flag_mcu_;
 
-    if(transmit_success) cout <<" Transmission successes!\n";
+    if(transmit_success) cout << " Transmission successes!\n";
     else cout << "Fail to transmit! Please retry...\n";
 
     return transmit_success;
@@ -315,33 +316,31 @@ void HHIGCS::callbackImage(const sensor_msgs::ImageConstPtr& msg, const int& id)
 void HHIGCS::pointcloud2tobuffers(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
     // get width and height of 2D point cloud data
     buf_lidars_npoints[id] = msg_lidar->width;
-    for(int i = 0; i < msg_lidar->width; i++)
-    {
-
+    for(int i = 0; i < msg_lidar->width; i++) {
        int arrayPosX = i*msg_lidar->point_step + msg_lidar->fields[0].offset; // X has an offset of 0
-    int arrayPosY = i*msg_lidar->point_step + msg_lidar->fields[1].offset; // Y has an offset of 4
-    int arrayPosZ = i*msg_lidar->point_step + msg_lidar->fields[2].offset; // Z has an offset of 8
+       int arrayPosY = i*msg_lidar->point_step + msg_lidar->fields[1].offset; // Y has an offset of 4
+       int arrayPosZ = i*msg_lidar->point_step + msg_lidar->fields[2].offset; // Z has an offset of 8
 
-    int ind_intensity = i*msg_lidar->point_step + msg_lidar->fields[3].offset; // 12
-    int ind_ring = i*msg_lidar->point_step + msg_lidar->fields[4].offset; // 16
-    int ind_time = i*msg_lidar->point_step + msg_lidar->fields[5].offset; // 18
+       int ind_intensity = i*msg_lidar->point_step + msg_lidar->fields[3].offset; // 12
+       int ind_ring = i*msg_lidar->point_step + msg_lidar->fields[4].offset; // 16
+       int ind_time = i*msg_lidar->point_step + msg_lidar->fields[5].offset; // 18
 
-    float X = 0.0;
-    float Y = 0.0;
-    float Z = 0.0;
-    float intensity = 0.0;
-    unsigned short ring = 0.0;
-    float time = 0.0;
+       float X = 0.0;
+       float Y = 0.0;
+       float Z = 0.0;
+       float intensity = 0.0;
+       unsigned short ring = 0.0;
+       float time = 0.0;
 
-    memcpy(buf_lidars_x[id]+i, &msg_lidar->data[arrayPosX], sizeof(float));
-    memcpy(buf_lidars_y[id]+i, &msg_lidar->data[arrayPosY], sizeof(float));
-    memcpy(buf_lidars_z[id]+i, &msg_lidar->data[arrayPosZ], sizeof(float));
-    memcpy(buf_lidars_intensity[id]+i, &msg_lidar->data[ind_intensity], sizeof(float));
-    memcpy(buf_lidars_ring[id]+i, &msg_lidar->data[ind_ring], sizeof(unsigned short));
-    memcpy(buf_lidars_time[id]+i, &msg_lidar->data[ind_time], sizeof(float));
-    //cout << "xyz intensity ring time: "<<*(buf_lidars_x[id]+i)<<","<<*(buf_lidars_y[id]+i)<<","<<*(buf_lidars_z[id]+i)
-    //<<","<<*(buf_lidars_intensity[id]+i)<<","<<*(buf_lidars_ring[id]+i)<<","<<*(buf_lidars_time[id]+i)<<endl;
-}
+       memcpy(buf_lidars_x[id]+i, &msg_lidar->data[arrayPosX], sizeof(float));
+       memcpy(buf_lidars_y[id]+i, &msg_lidar->data[arrayPosY], sizeof(float));
+       memcpy(buf_lidars_z[id]+i, &msg_lidar->data[arrayPosZ], sizeof(float));
+       memcpy(buf_lidars_intensity[id]+i, &msg_lidar->data[ind_intensity], sizeof(float));
+       memcpy(buf_lidars_ring[id]+i, &msg_lidar->data[ind_ring], sizeof(unsigned short));
+       memcpy(buf_lidars_time[id]+i, &msg_lidar->data[ind_time], sizeof(float));
+       //cout << "xyz intensity ring time: "<<*(buf_lidars_x[id]+i)<<","<<*(buf_lidars_y[id]+i)<<","<<*(buf_lidars_z[id]+i)
+       //<<","<<*(buf_lidars_intensity[id]+i)<<","<<*(buf_lidars_ring[id]+i)<<","<<*(buf_lidars_time[id]+i)<<endl;
+    }
 }
 
 void HHIGCS::callbackLidar(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
