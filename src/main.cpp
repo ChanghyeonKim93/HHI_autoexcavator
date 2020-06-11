@@ -38,14 +38,16 @@ int main(int argc, char **argv) {
 
     int n_cams   = -1;
     int n_lidars = -1;
+    string dir;    
     ros::param::get("~n_cameras", n_cams);
     ros::param::get("~n_lidars", n_lidars);
-
+    ros::param::get("~save_directory", dir);
+    
     
     // Ground control system class
     
     stringstream ss1;
-    ss1 << "/home/larrkchlaptop/hhi_data/" << currentDateTime() << "/";
+    ss1 << dir << currentDateTime() << "/";
     string save_dir = ss1.str();
     cout << "save directory:[" << save_dir << "]\n";
 
