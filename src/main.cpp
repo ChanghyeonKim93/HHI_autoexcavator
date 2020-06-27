@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     string dir;    
     ros::param::get("~n_cameras", n_cams);
     ros::param::get("~n_lidars", n_lidars);
-    ros::param::get("~save_directory", dir);
+    ros::param::get("~directory", dir);
     
     
     // Ground control system class
