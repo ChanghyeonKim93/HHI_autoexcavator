@@ -11,7 +11,7 @@
    
     <node pkg="hhi_autoexcavator" name="hhi_gcs" type="hhi_gcs" output="screen">
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
-        <param name="n_lidars" type="int" value="$(arg n_cameras)"/>
+        <param name="n_lidars" type="int" value="$(arg n_lidars)"/>
     </node>
     <node pkg="bluecougar" name="bluecougar_multiple_node" type="bluecougar_multiple_node" output="screen">
         <param name="binning_on" type="bool" value="$(arg binning_on)"/>

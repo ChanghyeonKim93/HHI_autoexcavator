@@ -6,7 +6,7 @@
     <arg name="triggered_on" default="true"/>
     <arg name="auto_exposure_control" default="false"/>
     <arg name="auto_gain_control" default="false"/>
-    <arg name="expose_us" default="20000"/>
+    <arg name="expose_us" default="30000"/>
     <arg name="frame_rate" default="20.0"/>
 
     <arg name="n_cameras" default="2"/>
@@ -35,11 +35,5 @@
 </include>
 </group>
 
-<group ns = "lidar1">
-<include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
-  <arg name="device_ip" value="192.168.1.201" />
-  <arg name="port" value="2368" />
-</include>
-</group>
 	   
 </launch>

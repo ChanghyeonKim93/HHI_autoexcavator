@@ -9,6 +9,8 @@
 // TCP/IP- https://github.com/ros-drivers/rosserial/blob/dd76994c67c5e4997ef64837c07afb4eb0d4df27/rosserial_arduino/src/ros_lib/examples/TcpHelloWorld/TcpHelloWorld.ino#L15
 // TIMER- http://www.hardcopyworld.com/gnuboard5/bbs/board.php?bo_table=lecture_pract&wr_id=12
 // ROS cam and IMU- http://grauonline.de/wordpress/?page_id=1951
+// for mkr zero, ethernet library must be update to new version! (later than 2.0.0)
+// can bus library : 
 #include <SPI.h>
 #include <Ethernet.h>
 #include <CAN.h>

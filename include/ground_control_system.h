@@ -275,13 +275,22 @@ bool HHIGCS::sendSingleQueryToAllSensors()
     
     // Check whether all data is received.
     bool transmit_success = true;
-    if(flag_imgs_ != nullptr)
-        for(int i = 0; i < n_cams_; i++)   
+    if(flag_imgs_ != nullptr){
+        for(int i = 0; i < n_cams_; i++){
             transmit_success = transmit_success & flag_imgs_[i];
-    if(flag_lidars_ != nullptr)
-        for(int i = 0; i < n_lidars_; i++) 
+            cout << "rcvd img[" << i<<"]\n";
+	}
+    }
+    if(flag_lidars_ != nullptr){
+        for(int i = 0; i < n_lidars_; i++){
             transmit_success = transmit_success & flag_lidars_[i];
+            cout << "rcvd lidar[" << i<<"]\n";
+	}
+    }
+
     transmit_success = transmit_success & flag_mcu_;
+    if(flag_mcu_) cout << "rcvd mcu\n";
+
 
     if(transmit_success) cout << " Transmission successes!\n";
     else cout << "Fail to transmit! Please retry...\n";
