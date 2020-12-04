@@ -1,0 +1,24 @@
+<launch>
+
+    <arg name="directory" default="/home/larrkchlaptop/hhi_data/"/>
+
+    <arg name="binning_on" default="true"/>
+    <arg name="triggered_on" default="true"/>
+    <arg name="auto_exposure_control" default="false"/>
+    <arg name="auto_gain_control" default="false"/>
+    <arg name="expose_us" default="10000"/>
+    <arg name="frame_rate" default="20.0"/>
+
+    <arg name="n_cameras" default="0"/>
+    <arg name="n_lidars" default="2"/>
+   
+    <node pkg="hhi_autoexcavator" name="hhi_gcs" type="hhi_gcs" output="screen">
+        <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
+        <param name="n_lidars" type="int" value="$(arg n_lidars)"/>
+        <param name="directory" type="string" value="$(arg directory)"/>
+    </node>
+    
+    <node pkg="rosserial_python" type="serial_node.py" name="arduino_TCPIP" args=" tcp" output="screen">
+    </node>
+
+</launch>

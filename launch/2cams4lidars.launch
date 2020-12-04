@@ -10,7 +10,7 @@
     <arg name="frame_rate" default="20.0"/>
 
     <arg name="n_cameras" default="2"/>
-    <arg name="n_lidars" default="1"/>
+    <arg name="n_lidars" default="4"/>
    
     <node pkg="hhi_autoexcavator" name="hhi_gcs" type="hhi_gcs" output="screen">
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
@@ -32,6 +32,24 @@
 <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
   <arg name="device_ip" value="192.168.1.101" />
   <arg name="port" value="2367" />
+</include>
+</group>
+<group ns = "lidar1">
+<include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
+  <arg name="device_ip" value="192.168.1.201" />
+  <arg name="port" value="2368" />
+</include>
+</group>
+<group ns = "lidar2">
+<include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
+  <arg name="device_ip" value="192.168.1.102" />
+  <arg name="port" value="2369" />
+</include>
+</group>
+<group ns = "lidar3">
+<include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
+  <arg name="device_ip" value="192.168.1.199" />
+  <arg name="port" value="2370" />
 </include>
 </group>
 

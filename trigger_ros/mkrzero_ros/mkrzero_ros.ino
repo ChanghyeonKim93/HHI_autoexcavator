@@ -80,12 +80,12 @@ void command_callback(const std_msgs::Int32& cmd_msg){
       // Log timestamp.
       trigger_time = micros(); // microseconds
       time_sec  = trigger_time/1000000;
-      time_nsec = trigger_time - time_sec*1000000;
+      time_nsec = (trigger_time - time_sec*1000000)*1000;
       ++triggerCounter;
 
       // activate trigger signal      
       digitalWrite(PIN_TRIGGER, HIGH);
-      delayMicroseconds(10); // 10 us delay.
+      delayMicroseconds(500); // `1000 us delay.
       digitalWrite(PIN_TRIGGER, LOW); // is it okay?    
         
       msg_triggertime.header.seq = triggerCounter;
@@ -94,10 +94,10 @@ void command_callback(const std_msgs::Int32& cmd_msg){
       msg_triggertime.header.frame_id = "MCU_arduino";
       pub_triggertime.publish( &msg_triggertime );
       
-      Serial.println("trigger on.");
+      //Serial.println("trigger on.");
     } 
     else {
-      Serial.println("? unknown command.");
+      //Serial.println("? unknown command.");
       digitalWrite(PIN_TRIGGER, LOW); // stay low.
     }
 };
@@ -107,7 +107,7 @@ char dim0_label[] = "bodyroll";
 void setup()
 {
   // Use serial to monitor the process
-  Serial.begin(115200);
+  //Serial.begin(115200);
   
   // Setup pin
   digitalWrite(PIN_TRIGGER, LOW);  //  drive it low without temporarily driving it high
@@ -119,10 +119,12 @@ void setup()
   // Let some time for the Ethernet Shield to be initialized
   delay(1000);
 
+  /*
   Serial.println("");
   Serial.println("Ethernet connection info...");
   Serial.println("IP address: ");
   Serial.println(Ethernet.localIP());
+  */
 
   // Set the connection to rosserial socket server
   nh.getHardware()->setConnection(server, serverPort);
@@ -201,14 +203,14 @@ void callbackCANReceive(int packetSize) {
       can_float2.bytes[6] = CAN.read();
       can_float2.bytes[7] = CAN.read();
     }
-    Serial.print("0x");
+    /*Serial.print("0x");
     Serial.print(CAN.packetId());
     Serial.print(",");
     Serial.print(can_float1.f);
     Serial.print(",");
     Serial.print(can_float2.f);
     Serial.println();
-    
+    */
     
     msg_canfloats.data[0] = can_float1.f;
     msg_canfloats.data[1] = can_float2.f;

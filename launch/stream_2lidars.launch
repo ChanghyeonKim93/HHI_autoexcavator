@@ -1,0 +1,16 @@
+<launch>
+<group ns = "lidar0">
+<include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
+  <arg name="device_ip" value="192.168.1.101" />
+  <arg name="port" value="2367" />
+</include>
+</group>
+
+<group ns = "lidar1">
+<include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
+  <arg name="device_ip" value="192.168.1.201" />
+  <arg name="port" value="2368" />
+</include>
+</group>
+	   
+</launch>

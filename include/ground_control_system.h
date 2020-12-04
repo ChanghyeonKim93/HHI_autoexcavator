@@ -59,6 +59,8 @@ public:
     bool sendSingleQueryToAllSensors();
     void sendQuitMsgToAllSensors();
     void pointcloud2tobuffers(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id);
+    void pointcloud2tobuffersVelodyneVLP16(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id);
+    void pointcloud2tobuffersOusterOS1Gen264(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id);
     void saveLidarData(const std::string& file_name, const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_lidar);
     void saveLidarDataRingTime(const std::string& file_name, const int& id);
     void saveAllData();
@@ -162,12 +164,12 @@ HHIGCS::HHIGCS(ros::NodeHandle& nh,
         for(int i = 0; i < n_lidars_; i++){
             flag_lidars_[i] = false;
             *(buf_lidars_ + i) = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-	    buf_lidars_x.push_back(new float[100000]);
-	    buf_lidars_y.push_back(new float[100000]);
-	    buf_lidars_z.push_back(new float[100000]);
-	    buf_lidars_intensity.push_back(new float[100000]);
-	    buf_lidars_ring.push_back(new unsigned short[100000]);
-	    buf_lidars_time.push_back(new float[100000]);
+	    buf_lidars_x.push_back(new float[300000]);
+	    buf_lidars_y.push_back(new float[300000]);
+	    buf_lidars_z.push_back(new float[300000]);
+	    buf_lidars_intensity.push_back(new float[300000]);
+	    buf_lidars_ring.push_back(new unsigned short[300000]);
+	    buf_lidars_time.push_back(new float[300000]);
 	    buf_lidars_npoints.push_back(0);
 
             string name_temp = "/lidar" + itos(i) + "/velodyne_points";
@@ -315,16 +317,29 @@ void HHIGCS::sendQuitMsgToAllSensors(){
 
 void HHIGCS::callbackImage(const sensor_msgs::ImageConstPtr& msg, const int& id){
     cv_bridge::CvImagePtr cv_ptr;
-	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
+	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
 	*(buf_imgs_ + id) = cv_ptr->image;
 
     cout << "  GCS get! [" << id << "] image.\n";
     flag_imgs_[id] = true;
 };
 
+
 void HHIGCS::pointcloud2tobuffers(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
     // get width and height of 2D point cloud data
+    if(msg_lidar->height > 1){ // ouster 64.
+	this->pointcloud2tobuffersOusterOS1Gen264(msg_lidar,id);
+    }
+    else{ // velodyne VLP 16. 
+	this->pointcloud2tobuffersVelodyneVLP16(msg_lidar, id);
+    }
+   
+}
+
+void HHIGCS::pointcloud2tobuffersVelodyneVLP16(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
+    // get width and height of 2D point cloud data
     buf_lidars_npoints[id] = msg_lidar->width;
+
     for(int i = 0; i < msg_lidar->width; i++) {
        int arrayPosX = i*msg_lidar->point_step + msg_lidar->fields[0].offset; // X has an offset of 0
        int arrayPosY = i*msg_lidar->point_step + msg_lidar->fields[1].offset; // Y has an offset of 4
@@ -333,6 +348,8 @@ void HHIGCS::pointcloud2tobuffers(const sensor_msgs::PointCloud2ConstPtr& msg_li
        int ind_intensity = i*msg_lidar->point_step + msg_lidar->fields[3].offset; // 12
        int ind_ring = i*msg_lidar->point_step + msg_lidar->fields[4].offset; // 16
        int ind_time = i*msg_lidar->point_step + msg_lidar->fields[5].offset; // 18
+
+
 
        float X = 0.0;
        float Y = 0.0;
@@ -347,13 +364,70 @@ void HHIGCS::pointcloud2tobuffers(const sensor_msgs::PointCloud2ConstPtr& msg_li
        memcpy(buf_lidars_intensity[id]+i, &msg_lidar->data[ind_intensity], sizeof(float));
        memcpy(buf_lidars_ring[id]+i, &msg_lidar->data[ind_ring], sizeof(unsigned short));
        memcpy(buf_lidars_time[id]+i, &msg_lidar->data[ind_time], sizeof(float));
+
        //cout << "xyz intensity ring time: "<<*(buf_lidars_x[id]+i)<<","<<*(buf_lidars_y[id]+i)<<","<<*(buf_lidars_z[id]+i)
        //<<","<<*(buf_lidars_intensity[id]+i)<<","<<*(buf_lidars_ring[id]+i)<<","<<*(buf_lidars_time[id]+i)<<endl;
     }
 }
 
+void HHIGCS::pointcloud2tobuffersOusterOS1Gen264(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
+    // get width and height of 2D point cloud data
+    buf_lidars_npoints[id] = msg_lidar->width*msg_lidar->height;
+
+int n_pts_channel = msg_lidar->width;
+int n_channels = msg_lidar->height;
+
+cout << "width: "<<n_pts_channel<<endl;
+cout << "height: "<<n_channels<<endl;
+cout << "point step: "<<msg_lidar->point_step<<endl;
+cout << "row step: "<<msg_lidar->row_step<<endl;
+
+for(int i = 0; i < 9; i++){
+   cout <<msg_lidar->fields[i].name <<" / "<<msg_lidar->fields[i].offset<<endl;
+}
+
+for(int ch = 0; ch < msg_lidar->height; ch++){
+    int offset_channel = ch*msg_lidar->row_step; // 98304 = 64 channels * 2048 points (2048 mode)
+    for(int i = 0; i < msg_lidar->width; i++) {
+       int offset_i = offset_channel + i*msg_lidar->point_step;
+       int ind_x = offset_i + msg_lidar->fields[0].offset; // X has an offset of 0 (sz: 4)
+       int ind_y = offset_i + msg_lidar->fields[1].offset; // Y has an offset of 4 (sz: 4)
+       int ind_z = offset_i + msg_lidar->fields[2].offset; // Z has an offset of 8 (sz: 4)
+       int ind_intensity = offset_i + msg_lidar->fields[3].offset; // intensity 16 (sz:4)
+       int ind_time = offset_i + msg_lidar->fields[4].offset; // time 20 (sz:4)
+       int ind_reflectivity = offset_i + msg_lidar->fields[5].offset; // reflectivity 24 (sz:2)
+       int ind_ring = offset_i + msg_lidar->fields[6].offset; // ring 26 (sz:2)
+       int ind_noise = offset_i + msg_lidar->fields[7].offset; // noise 28 (sz:4)
+       int ind_range = offset_i + msg_lidar->fields[8].offset; // range 32 (sz: ?)
+
+
+       float X = 0.0;
+       float Y = 0.0;
+       float Z = 0.0;
+       float intensity = 0.0;
+       float time = 0.0;       
+       unsigned short reflect = 0;
+       unsigned short ring = 0;
+       float noise = 0.0;
+       float range = 0.0;
+
+       int ind_buffer = i + ch*n_pts_channel;
+       memcpy(buf_lidars_x[id]+ind_buffer,         &msg_lidar->data[ind_x], sizeof(float));
+       memcpy(buf_lidars_y[id]+ind_buffer,         &msg_lidar->data[ind_y], sizeof(float));
+       memcpy(buf_lidars_z[id]+ind_buffer,         &msg_lidar->data[ind_z], sizeof(float));
+       memcpy(buf_lidars_intensity[id]+ind_buffer, &msg_lidar->data[ind_intensity], sizeof(float));
+       memcpy(buf_lidars_ring[id]+ind_buffer,      &msg_lidar->data[ind_ring], sizeof(unsigned short));
+       memcpy(buf_lidars_time[id]+ind_buffer,      &msg_lidar->data[ind_time], sizeof(float));
+
+       //cout << "xyz intensity ring time: "<<*(buf_lidars_x[id]+i)<<","<<*(buf_lidars_y[id]+i)<<","<<*(buf_lidars_z[id]+i)
+       //<<","<<*(buf_lidars_intensity[id]+i)<<","<<*(buf_lidars_ring[id]+i)<<","<<*(buf_lidars_time[id]+i)<<endl;
+    }
+}
+}
+
+
 void HHIGCS::callbackLidar(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, const int& id){
-	pointcloud2tobuffers(msg_lidar,  id);
+    pointcloud2tobuffers(msg_lidar, id);
     msg_lidar->header.stamp; // timestamp
 
     // Create a container for the data.
@@ -374,7 +448,7 @@ void HHIGCS::callbackLidar(const sensor_msgs::PointCloud2ConstPtr& msg_lidar, co
 void HHIGCS::callbackTime(const sensor_msgs::TimeReference::ConstPtr& t_ref){
     buf_time_ = (double)t_ref->header.stamp.sec + (double)t_ref->header.stamp.nsec/(double)1000000.0;
     current_seq_ = t_ref->header.seq;
-    cout << "  GCS get! [" << buf_time_ <<"] time ref."<<" seg: " << current_seq_ << "\n";
+    cout << "  arduino time is got! [" << buf_time_ <<"] time ref."<<" seg: " << current_seq_ << "\n";
     flag_mcu_ = true;
 };
 

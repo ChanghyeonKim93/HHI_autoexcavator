@@ -6,11 +6,11 @@
     <arg name="triggered_on" default="true"/>
     <arg name="auto_exposure_control" default="false"/>
     <arg name="auto_gain_control" default="false"/>
-    <arg name="expose_us" default="4500"/>
+    <arg name="expose_us" default="10000"/>
     <arg name="frame_rate" default="20.0"/>
 
-    <arg name="n_cameras" default="2"/>
-    <arg name="n_lidars" default="1"/>
+    <arg name="n_cameras" default="1"/>
+    <arg name="n_lidars" default="0"/>
    
     <node pkg="hhi_autoexcavator" name="hhi_gcs" type="hhi_gcs" output="screen">
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
@@ -27,13 +27,6 @@
     </node>
     <node pkg="rosserial_python" type="serial_node.py" name="arduino_TCPIP" args=" tcp" output="screen">
     </node>
-
-<group ns = "lidar0">
-<include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch">
-  <arg name="device_ip" value="192.168.1.101" />
-  <arg name="port" value="2367" />
-</include>
-</group>
 
 	   
 </launch>
