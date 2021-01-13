@@ -2,7 +2,7 @@
 
     <arg name="directory" default="/home/larrkchlaptop/hhi_data/"/>
 
-    <arg name="binning_on" default="true"/>
+    <arg name="binning_on" default="false"/>
     <arg name="triggered_on" default="true"/>
     <arg name="auto_exposure_control" default="false"/>
     <arg name="auto_gain_control" default="false"/>

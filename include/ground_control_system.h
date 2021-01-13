@@ -240,7 +240,7 @@ HHIGCS::~HHIGCS() {
 };
 
 void HHIGCS::streamingMode(){
-    cout << "20 Hz (forced) streaming mode\n";
+    cout << "10 Hz (forced) streaming mode\n";
     // initialize all flags
     initializeAllFlags();
 
@@ -254,7 +254,7 @@ void HHIGCS::streamingMode(){
     // (timeout) Wait for obtaining and transmitting all sensor data. 
     // Considering exposure time and lidar gathering time, set 50 ms
     ros::spinOnce();
-    ros::Duration(0.05).sleep();
+    ros::Duration(0.1).sleep();
 };
 
 bool HHIGCS::sendSingleQueryToAllSensors()
@@ -272,7 +272,7 @@ bool HHIGCS::sendSingleQueryToAllSensors()
     // (timeout) Wait for obtaining and transmitting all sensor data. 
     // Considering exposure time and lidar gathering time, set 50 ms
     cout << "wating 110 ms for data transmission...\n"; // because a rate of a lidar is about 10 Hz.
-    ros::Duration(0.11).sleep();
+    ros::Duration(0.22).sleep();
     ros::spinOnce();
     
     // Check whether all data is received.
@@ -280,22 +280,22 @@ bool HHIGCS::sendSingleQueryToAllSensors()
     if(flag_imgs_ != nullptr){
         for(int i = 0; i < n_cams_; i++){
             transmit_success = transmit_success & flag_imgs_[i];
-            cout << "rcvd img[" << i<<"]\n";
+            cout << "  GCS INFO: cam   [" << i<<"]: " << (transmit_success ? "OK!" : "FAIL...") << "\n";
 	}
     }
     if(flag_lidars_ != nullptr){
         for(int i = 0; i < n_lidars_; i++){
             transmit_success = transmit_success & flag_lidars_[i];
-            cout << "rcvd lidar[" << i<<"]\n";
+            cout << "  GCS INFO: lidar [" << i<<"]: " << (transmit_success ? "OK!" : "FAIL...") << "\n";
 	}
     }
 
     transmit_success = transmit_success & flag_mcu_;
-    if(flag_mcu_) cout << "rcvd mcu\n";
+    if(flag_mcu_) cout << "  GCS INFO: mcu OK!!\n";
 
 
-    if(transmit_success) cout << " Transmission successes!\n";
-    else cout << "Fail to transmit! Please retry...\n";
+    if(transmit_success) cout << " Transmissions succeed!!\n";
+    else cout << " Fail to transmit! Please retry...\n";
 
     return transmit_success;
 };
@@ -320,7 +320,7 @@ void HHIGCS::callbackImage(const sensor_msgs::ImageConstPtr& msg, const int& id)
 	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
 	*(buf_imgs_ + id) = cv_ptr->image;
 
-    cout << "  GCS get! [" << id << "] image.\n";
+    cout << "     Cam callback [" << id << "] runs.\n";
     flag_imgs_[id] = true;
 };
 
