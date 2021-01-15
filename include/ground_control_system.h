@@ -521,9 +521,12 @@ void HHIGCS::saveAllData(){
 		png_parameters.push_back(0);
 		png_param_on = true;
 	}
+    cv::Mat mat_tmp;
     for(int id = 0; id < n_cams_; id++){
         string file_name = save_dir_ + "/cam" + itos(id) + "/" + itos(current_seq_) + ".png";
-	    cv::imwrite(file_name, *(buf_imgs_ + id), png_parameters);
+        
+        cv::cvtColor(*(buf_imgs_ + id),mat_tmp,CV_BGR2GRAY); 
+	    cv::imwrite(file_name, mat_tmp, png_parameters);
     }
 
     // save lidars
